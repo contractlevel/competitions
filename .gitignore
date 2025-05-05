@@ -12,3 +12,8 @@ docs/
 
 # Dotenv file
 .env
+
+# ZKsync files
+zkout/
+
+.notes.md
