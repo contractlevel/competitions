@@ -1,18 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
-import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
-import {IRouterClient, Client} from "@chainlink/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
+import {CrossChain, IRouterClient, Client} from "./CrossChain.sol";
 
-contract CCAutomation is AutomationCompatible, Ownable, CCIPReceiver {
+/// @notice This contract is necessary to enable automation for the ContentCompetition system
+/// @title CCAutomation - Content Competition (Crosschain) Automation
+/// @author @contractlevel
+// Owner must:
+// 1. set Lens selector
+// 2. set allowed peer for ContentCompetion address
+// 3. set ccip gas limit
+// 4. fund this contract with LINK
+// 5. set automation forwarder
+contract CCAutomation is AutomationCompatible, CrossChain {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
     error CCAutomation__OnlyForwarder();
-    error CCAutomation__NotAllowed(uint64 chainSelector, address peer);
     error CCAutomation__NotEnoughLink(uint256 linkBalance, uint256 fees);
 
     /*//////////////////////////////////////////////////////////////
@@ -23,111 +28,114 @@ contract CCAutomation is AutomationCompatible, Ownable, CCIPReceiver {
         bool hasConcluded; // @review - rename this??
     }
 
-    LinkTokenInterface internal immutable i_link;
-
+    /// @dev number of competitions, used for competitionId
     uint256 internal s_competitionCount;
+    /// @dev track competitions details for each competitionId
     mapping(uint256 competitionId => Competition competitions) internal s_competitions;
+    /// @dev Chainlink Automation forwarder
     address internal s_forwarder;
-    mapping(uint64 chainSelector => mapping(address peer => bool isAllowed)) internal s_allowedPeers;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
+    event CompetitionCreated(
+        bytes32 indexed ccipMessagedId, uint256 indexed competitionId, uint256 indexed votingDeadline
+    );
+    event CompetitionAutomated(bytes32 indexed ccipMessageId, uint256 indexed competitionId);
     event ForwarderSet(address indexed forwarder);
-    event CompetitionCreated(bytes32 indexed ccipMessagedId, uint256 competitionId, uint256 votingDeadline);
-    event AllowedPeerSet(uint64 chainSelector, address indexed peer, bool isAllowed);
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-    constructor(address link, address ccipRouter) Ownable(msg.sender) CCIPReceiver(ccipRouter) {
-        i_link = LinkTokenInterface(link);
+    constructor(address link, address ccipRouter, uint256 ccipGasLimit) CrossChain(link, ccipRouter, ccipGasLimit) {
         s_competitionCount = 1;
     }
 
     /*//////////////////////////////////////////////////////////////
                                 EXTERNAL
     //////////////////////////////////////////////////////////////*/
-    function checkUpkeep(bytes calldata checkData)
+    function checkUpkeep(bytes calldata /* checkData */ )
         external
+        view
         cannotExecute
         returns (bool upkeepNeeded, bytes memory performData)
     {
+        /// @dev read values from storage
         uint256 competitionCount = s_competitionCount;
+        address forwarder = s_forwarder;
+        uint64 dstChainSelector = s_allowedChain;
+        address receiver = s_allowedPeer;
+
+        // @review - is this loop logic correct?
         for (uint256 competitionId = 1; competitionId < competitionCount; ++competitionId) {
-            Competition storage comp = s_competitions[competitionId];
-            if (block.timestamp > comp.votingDeadline && !comp.hasConcluded) {
+            Competition storage s_comp = s_competitions[competitionId];
+
+            /// @dev if a valid competition is found, create performData
+            if (block.timestamp > s_comp.votingDeadline && !s_comp.hasConcluded) {
+                /// @dev build ccip message
+                bytes memory data = abi.encode(competitionId);
+                Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(receiver, data);
+                uint256 fees = _getCCIPFees(dstChainSelector, evm2AnyMessage);
+
                 upkeepNeeded = true;
-                performData = abi.encode(competitionId);
+                performData = abi.encode(competitionId, fees, forwarder, dstChainSelector, evm2AnyMessage);
                 return (upkeepNeeded, performData);
             }
         }
-        // No eligible competition found
+        /// @dev no eligible competition found
         upkeepNeeded = false;
         performData = "";
     }
 
     function performUpkeep(bytes calldata performData) external {
-        if (msg.sender != s_forwarder) revert CCAutomation__OnlyForwarder();
+        /// @dev decode perform data
+        (
+            uint256 competitionId,
+            uint256 fees,
+            address forwarder,
+            uint64 dstChainSelector,
+            Client.EVM2AnyMessage memory evm2AnyMessage
+        ) = abi.decode(performData, (uint256, uint256, address, uint64, Client.EVM2AnyMessage));
 
-        /// @dev get competitionId
-        uint256 competitionId = abi.decode(performData, (uint256));
+        /// @dev revert if not chainlink forwarder
+        if (msg.sender != forwarder) revert CCAutomation__OnlyForwarder();
+
         /// @dev set to true so chainlink automation doesn't call again
         s_competitions[competitionId].hasConcluded = true;
 
-        /// @dev build ccip message
-        // @review - can this logic go in checkUpkeep? probably
-        Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-            receiver: abi.encode(receiver), // ABI-encoded receiver address
-            data: abi.encode(text), // ABI-encoded string
-            tokenAmounts: new Client.EVMTokenAmount[](0), // Empty array indicating no tokens are being sent
-            extraArgs: Client._argsToBytes(
-                // Additional arguments, setting gas limit and allowing out-of-order execution.
-                // Best Practice: For simplicity, the values are hardcoded. It is advisable to use a more dynamic approach
-                // where you set the extra arguments off-chain. This allows adaptation depending on the lanes, messages,
-                // and ensures compatibility with future CCIP upgrades. Read more about it here: https://docs.chain.link/ccip/best-practices#using-extraargs
-                Client.EVMExtraArgsV2({
-                    gasLimit: 200_000, // Gas limit for the callback on the destination chain
-                    allowOutOfOrderExecution: true // Allows the message to be executed out of order relative to other messages from the same sender
-                })
-            ),
-            // Set the feeToken  address, indicating LINK will be used for fees
-            feeToken: address(s_linkToken)
-        });
-
-        uint256 fees = IRouterClient(i_ccipRouter).getFee(destinationChainSelector, evm2AnyMessage);
-        uint256 linkBalance = i_link.balanceOf(address(this));
-        if (fees > linkBalance) revert CCAutomation__NotEnoughLink(linkBalance, fees);
-
+        /// @dev approve link and ccip send
         i_link.approve(i_ccipRouter, fees);
-        IRouterClient(i_ccipRouter).ccipSend(destinationChainSelector, evm2AnyMessage);
+        bytes32 ccipMessageId = IRouterClient(i_ccipRouter).ccipSend(dstChainSelector, evm2AnyMessage);
 
-        // Send the message through the router and store the returned message ID
-        messageId = IRouterClient(i_ccipRouter).ccipSend(destinationChainSelector, evm2AnyMessage);
+        /// @dev emit event
+        emit CompetitionAutomated(ccipMessageId, competitionId);
+    }
 
-        // Emit an event with message details
-        emit MessageSent(messageId, destinationChainSelector, receiver, text, address(s_linkToken), fees);
+    /// @notice onlyOwner utility function for withdrawing LINK
+    function withdrawLink() external onlyOwner {
+        i_link.transfer(msg.sender, i_link.balanceOf(address(this)));
     }
 
     /*//////////////////////////////////////////////////////////////
                                 INTERNAL
     //////////////////////////////////////////////////////////////*/
     /// @param message Any2EVMMessage.
-    function _ccipReceive(Client.Any2EVMMessage memory message) internal override {
-        /// @dev revert if sender is not allowed
-        uint64 sourceChainSelector = any2EvmMessage.sourceChainSelector;
-        address sender = abi.decode(any2EvmMessage.sender, (address));
-        if (!s_allowedPeers[sourceChainSelector][sender]) revert CCAutomation__NotAllowed(sourceChainSelector, sender);
+    function _ccipReceive(Client.Any2EVMMessage memory message)
+        internal
+        override
+        onlyAllowed(message.sourceChainSelector, abi.decode(message.sender, (address)))
+    {
+        /// @dev decode competitionId and votingDeadline
+        (uint256 competitionId, uint256 votingDeadline) = abi.decode(message.data, (uint256, uint256));
 
         /// @dev update storage with the competitionId and the votingDeadline
-        (uint256 competitionId, uint256 votingDeadline) = abi.decode(any2EvmMessage.data, (uint256, uint256));
-        Competition storage comp = s_competitions[competitionId];
-        comp.votingDeadline = votingDeadline;
+        Competition storage s_comp = s_competitions[competitionId];
+        s_comp.votingDeadline = votingDeadline;
 
         /// @dev update competitionCount storage
         s_competitionCount = competitionId;
 
-        emit CompetitionCreated(any2EvmMessage.messageId, competitionId, votingDeadline);
+        emit CompetitionCreated(message.messageId, competitionId, votingDeadline);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -136,10 +144,5 @@ contract CCAutomation is AutomationCompatible, Ownable, CCIPReceiver {
     function setForwarder(address forwarder) external onlyOwner {
         s_forwarder = forwarder;
         emit ForwarderSet(forwarder);
-    }
-
-    function setAllowedPeers(uint64 chainSelector, address peer, bool isAllowed) external onlyOwner {
-        s_allowedPeers[chainSelector][peer] = isAllowed;
-        emit AllowedPeerSet(chainSelector, peer, isAllowed);
     }
 }
