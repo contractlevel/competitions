@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
+// import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import {CrossChain, IRouterClient, Client} from "./CrossChain.sol";
 
 /// @notice This contract is necessary to enable automation for the ContentCompetition system
@@ -13,7 +13,7 @@ import {CrossChain, IRouterClient, Client} from "./CrossChain.sol";
 // 3. set ccip gas limit
 // 4. fund this contract with LINK
 // 5. set automation forwarder
-contract CCAutomation is AutomationCompatible, CrossChain {
+contract CCAutomation is CrossChain {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -57,8 +57,11 @@ contract CCAutomation is AutomationCompatible, CrossChain {
     function checkUpkeep(bytes calldata /* checkData */ )
         external
         view
-        cannotExecute
-        returns (bool upkeepNeeded, bytes memory performData)
+        returns (
+            // cannotExecute
+            bool upkeepNeeded,
+            bytes memory performData
+        )
     {
         /// @dev read values from storage
         uint256 competitionCount = s_competitionCount;

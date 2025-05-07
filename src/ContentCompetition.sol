@@ -148,6 +148,7 @@ contract ContentCompetition is IContentCompetition, CrossChain {
 
         if (block.timestamp > s_comp.submissionDeadline) revert ContentCompetition__SubmissionsClosed();
         if (s_comp.submitted[postId]) revert ContentCompetition__PostAlreadySubmitted(competitionId, postId);
+        if (!i_feed.postExists(postId)) revert ContentCompetition__InvalidPost();
 
         // Mark the post as submitted and add it to the submissions array
         s_comp.submitted[postId] = true;

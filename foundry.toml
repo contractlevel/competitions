@@ -2,6 +2,7 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+solc_version = "0.8.26"
 remappings = [
     "@lens-protocol/lens-v3=lib/lens-v3",
     "@openzeppelin/contracts=lib/openzeppelin-contracts/contracts",
@@ -13,7 +14,7 @@ remappings = [
 [profile.zksync]
 src = 'src'
 libs = ['lib']
-solc-version = "0.8.24"
+solc-version = "0.8.26"
 fallback_oz = true
 is_system = false
 mode = "3"
