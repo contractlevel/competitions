@@ -6,12 +6,14 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interface
 import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {IRouterClient, Client} from "@chainlink/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 
+import {ICrossChain} from "./interfaces/ICrossChain.sol";
+
 /// @notice inherit this for crosschain functionality
 // Owner must:
 // 1. set allowed chain selector
 // 2. set allowed peer address
 // 3. fund this contract with LINK
-abstract contract CrossChain is Ownable, CCIPReceiver {
+abstract contract CrossChain is Ownable, CCIPReceiver, ICrossChain {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/

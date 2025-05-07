@@ -19,6 +19,7 @@ contract HelperConfig is Script {
         uint256 ccipGasLimit;
         uint64 allowedChainSelector;
         address allowedPeer;
+        address deployedContract;
     }
 
     NetworkConfig public activeNetworkConfig;
@@ -42,7 +43,8 @@ contract HelperConfig is Script {
             ccipRouter: 0xf5Aa9fe2B78d852490bc4E4Fe9ab19727DD10298, // https://docs.chain.link/ccip/directory/testnet/chain/ethereum-testnet-sepolia-lens-1
             ccipGasLimit: INITIAL_CCIP_GAS_LIMIT,
             allowedChainSelector: 16015286601757825753, // eth sepolia selector https://docs.chain.link/ccip/directory/testnet/chain/ethereum-testnet-sepolia
-            allowedPeer: address(0) // update with CCAutomation on eth sepolia
+            allowedPeer: address(0), // update with CCAutomation on eth sepolia
+            deployedContract: address(0) // update with deployed ContentCompetition
         });
     }
 
@@ -53,7 +55,8 @@ contract HelperConfig is Script {
             ccipRouter: 0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59, // https://docs.chain.link/ccip/directory/testnet/chain/ethereum-testnet-sepolia
             ccipGasLimit: INITIAL_CCIP_GAS_LIMIT,
             allowedChainSelector: 6827576821754315911, // lens sepolia selector
-            allowedPeer: address(0) // update with ContentCompetition on lens sepolia
+            allowedPeer: address(0), // update with ContentCompetition on lens sepolia
+            deployedContract: address(0) // update with deployed CCAutomation
         });
     }
 
