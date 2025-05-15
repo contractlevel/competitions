@@ -2,21 +2,20 @@
 pragma solidity 0.8.26;
 
 import {Script} from "forge-std/Script.sol";
+import {Competitions} from "../../src/Competitions.sol";
 import {HelperConfig} from "../HelperConfig.s.sol";
-import {CCAutomation} from "../../src/crosschain/CCAutomation.sol";
 
-/// @notice deploy to eth
-contract DeployCCAutomation is Script {
+contract DeployCompetitions is Script {
     /*//////////////////////////////////////////////////////////////
                                   RUN
     //////////////////////////////////////////////////////////////*/
-    function run() public returns (CCAutomation, HelperConfig) {
+    function run() public returns (Competitions, HelperConfig) {
         HelperConfig config = new HelperConfig();
-        (, address link, address ccipRouter, uint256 ccipGasLimit,,,) = config.activeNetworkConfig();
+        (address feed,,,,,,) = config.activeNetworkConfig();
 
         vm.startBroadcast();
-        CCAutomation ccAuto = new CCAutomation(link, ccipRouter, ccipGasLimit);
+        Competitions comp = new Competitions(feed);
         vm.stopBroadcast();
-        return (ccAuto, config);
+        return (comp, config);
     }
 }

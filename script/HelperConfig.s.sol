@@ -30,6 +30,7 @@ contract HelperConfig is Script {
     constructor() {
         if (block.chainid == 37111) activeNetworkConfig = getLensSepoliaConfig();
         if (block.chainid == 11155111) activeNetworkConfig = getEthSepoliaConfig();
+        if (block.chainid == 232) activeNetworkConfig = getLensMainnetConfig();
         // else activeNetworkConfig = getOrCreateAnvilEthConfig();
     }
 
@@ -43,8 +44,20 @@ contract HelperConfig is Script {
             ccipRouter: 0xf5Aa9fe2B78d852490bc4E4Fe9ab19727DD10298, // https://docs.chain.link/ccip/directory/testnet/chain/ethereum-testnet-sepolia-lens-1
             ccipGasLimit: INITIAL_CCIP_GAS_LIMIT,
             allowedChainSelector: 16015286601757825753, // eth sepolia selector https://docs.chain.link/ccip/directory/testnet/chain/ethereum-testnet-sepolia
-            allowedPeer: address(0), // update with CCAutomation on eth sepolia
-            deployedContract: address(0) // update with deployed ContentCompetition
+            allowedPeer: 0x05e158c17dA90eA53b4dFC939dCDaf3899e6aFD1, // CCAutomation on Eth Sepolia
+            deployedContract: 0xb616C2D766Ef04b426FD1DC456A31dbEC9697B18
+        });
+    }
+
+    function getLensMainnetConfig() public pure returns (NetworkConfig memory) {
+        return NetworkConfig({
+            feed: 0xcB5E109FFC0E15565082d78E68dDDf2573703580, // https://lens.xyz/docs/protocol/resources/contracts#deployed-contracts-lens-mainnet
+            link: address(0),
+            ccipRouter: address(0),
+            ccipGasLimit: 0,
+            allowedChainSelector: 0,
+            allowedPeer: address(0),
+            deployedContract: address(0)
         });
     }
 
@@ -55,9 +68,10 @@ contract HelperConfig is Script {
             ccipRouter: 0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59, // https://docs.chain.link/ccip/directory/testnet/chain/ethereum-testnet-sepolia
             ccipGasLimit: INITIAL_CCIP_GAS_LIMIT,
             allowedChainSelector: 6827576821754315911, // lens sepolia selector
-            allowedPeer: address(0), // update with ContentCompetition on lens sepolia
-            deployedContract: address(0) // update with deployed CCAutomation
+            allowedPeer: 0xb616C2D766Ef04b426FD1DC456A31dbEC9697B18, // update with ContentCompetition on lens sepolia
+            deployedContract: 0x05e158c17dA90eA53b4dFC939dCDaf3899e6aFD1
         });
+        // forwarder: 0xA963D00af8652329eb79E9c42B6c90f10A972685
     }
 
     // function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {

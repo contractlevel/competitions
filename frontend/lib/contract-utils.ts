@@ -1,8 +1,15 @@
-import { ethers } from 'ethers';
 import {
-  CONTRACT_ABI,
+  ethers,
+  Contract,
+  JsonRpcProvider,
+  BrowserProvider,
+  parseEther,
+  formatEther,
+} from 'ethers';
+import {
+  COMPETITIONS_ABI,
   CONTRACT_ADDRESS,
-  FEED_CONTRACT_ABI,
+  FEED_ABI,
   FEED_CONTRACT_ADDRESS,
   LENS_TESTNET_CHAIN_ID,
 } from './contract-config';
@@ -121,16 +128,13 @@ export async function connectWallet() {
         }
       }
 
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
-      const contract = new ethers.Contract(
-        CONTRACT_ADDRESS,
-        CONTRACT_ABI,
-        signer
-      );
-      const feedContract = new ethers.Contract(
+      // ethers v6: use BrowserProvider directly
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const contract = new Contract(CONTRACT_ADDRESS, COMPETITIONS_ABI, signer);
+      const feedContract = new Contract(
         FEED_CONTRACT_ADDRESS,
-        FEED_CONTRACT_ABI,
+        FEED_ABI,
         signer
       );
 
@@ -145,28 +149,22 @@ export async function connectWallet() {
 }
 
 export async function getReadOnlyContracts() {
-  // For read-only operations, we can use a provider without requiring a wallet connection
   try {
     const rpcUrl =
       process.env.NEXT_PUBLIC_RPC_URL || 'https://rpc.testnet.lens.xyz';
-    const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+    const provider = new JsonRpcProvider(rpcUrl);
 
-    // Check if contracts are deployed before creating contract instances
+    // Only check the main contract
     const contractCode = await provider.getCode(CONTRACT_ADDRESS);
-    const feedContractCode = await provider.getCode(FEED_CONTRACT_ADDRESS);
 
-    if (contractCode === '0x' || feedContractCode === '0x') {
+    if (contractCode === '0x') {
       return null;
     }
 
-    const contract = new ethers.Contract(
-      CONTRACT_ADDRESS,
-      CONTRACT_ABI,
-      provider
-    );
-    const feedContract = new ethers.Contract(
+    const contract = new Contract(CONTRACT_ADDRESS, COMPETITIONS_ABI, provider);
+    const feedContract = new Contract(
       FEED_CONTRACT_ADDRESS,
-      FEED_CONTRACT_ABI,
+      FEED_ABI,
       provider
     );
 
@@ -216,9 +214,9 @@ export async function fetchCompetition(competitionId) {
         creator,
         prizeDistributed,
         theme,
-        submissionDeadline: submissionDeadline.toNumber(),
-        votingDeadline: votingDeadline.toNumber(),
-        prizePool: ethers.utils.formatEther(prizePool),
+        submissionDeadline,
+        votingDeadline,
+        prizePool: formatEther(prizePool),
         submissions: submissions.map((id) => id.toString()),
         winningPostId:
           winningPostId.toString() !== '0' ? winningPostId.toString() : null,
@@ -366,7 +364,7 @@ export async function fetchPost(postId) {
         id: postId,
         author: post.author,
         contentURI: post.contentURI,
-        creationTimestamp: post.creationTimestamp.toNumber(),
+        creationTimestamp: Number(post.creationTimestamp),
         isDeleted: post.isDeleted,
       };
     } catch (callError) {
@@ -451,7 +449,7 @@ export async function fetchPostVotes(competitionId, postId) {
 }
 
 export function formatDate(timestamp) {
-  return new Date(timestamp * 1000).toLocaleString();
+  return new Date(Number(timestamp) * 1000).toLocaleString();
 }
 
 export function timestampFromDate(date) {
@@ -461,10 +459,6 @@ export function timestampFromDate(date) {
 export function truncateAddress(address) {
   if (!address) return '';
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
-export function formatEther(wei) {
-  return ethers.utils.formatEther(wei);
 }
 
 // Add this function to the existing contract-utils.ts file

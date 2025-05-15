@@ -7,8 +7,8 @@ remappings = [
     "@lens-protocol/lens-v3=lib/lens-v3",
     "@openzeppelin/contracts=lib/openzeppelin-contracts/contracts",
     "@chainlink/contracts=lib/chainlink/contracts",
-    "@chainlink-local=lib/chainlink-local",
-    "@chainlink/contracts-ccip=lib/chainlink-local/lib/ccip/contracts",
+    # "@chainlink-local=lib/chainlink-local",
+    # "@chainlink/contracts-ccip=lib/chainlink-local/lib/ccip/contracts",
 ]
 
 [profile.zksync]

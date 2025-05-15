@@ -9,7 +9,7 @@ import {CrossChain, IRouterClient, Client} from "./CrossChain.sol";
 /// @author @contractlevel
 // Owner must:
 // 1. set Lens selector
-// 2. set allowed peer for ContentCompetion address
+// 2. set allowed peer for ContentCompetition address
 // 3. set ccip gas limit
 // 4. fund this contract with LINK
 // 5. set automation forwarder
@@ -69,7 +69,6 @@ contract CCAutomation is CrossChain {
         uint64 dstChainSelector = s_allowedChain;
         address receiver = s_allowedPeer;
 
-        // @review - is this loop logic correct?
         for (uint256 competitionId = 1; competitionId < competitionCount; ++competitionId) {
             Competition storage s_comp = s_competitions[competitionId];
 

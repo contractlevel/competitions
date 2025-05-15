@@ -78,20 +78,21 @@ export default function CompetitionList() {
         for (const id of competitionIds) {
           try {
             const competition = await fetchCompetition(id);
-            fetchedCompetitions.push(competition);
+            // Only add if the competition has a non-empty theme
+            if (
+              competition &&
+              competition.theme &&
+              competition.theme.trim() !== ''
+            ) {
+              fetchedCompetitions.push(competition);
+            }
           } catch (err) {
             // Skip competitions that don't exist
             console.log(`Competition ${id} not found or error fetching`);
           }
         }
 
-        if (fetchedCompetitions.length === 0) {
-          // If no competitions were found, use mock data for demonstration
-          setUseMockData(true);
-          loadMockData();
-        } else {
-          setCompetitions(fetchedCompetitions);
-        }
+        setCompetitions(fetchedCompetitions);
       } catch (err: any) {
         console.error('Error fetching competitions:', err);
         setError(err.message || 'Failed to fetch competitions');
@@ -109,7 +110,7 @@ export default function CompetitionList() {
           id: '1',
           theme:
             'Web3 Innovation - Create a dApp that solves a real-world problem using blockchain technology',
-          prizePool: '0.5',
+          prizePool: '50',
           ...getMockCompetitionDeadlines('1'),
           submissions: ['1', '2', '3'],
         },
@@ -117,7 +118,7 @@ export default function CompetitionList() {
           id: '2',
           theme:
             'DeFi Applications - Showcase a decentralized finance application that improves financial inclusion',
-          prizePool: '1.0',
+          prizePool: '15',
           ...getMockCompetitionDeadlines('2'),
           submissions: ['4', '5'],
         },
@@ -125,7 +126,7 @@ export default function CompetitionList() {
           id: '3',
           theme:
             'NFT Showcase - Create an innovative NFT project with real utility beyond digital art',
-          prizePool: '0.3',
+          prizePool: '20',
           ...getMockCompetitionDeadlines('3'),
           submissions: ['6', '7', '8', '9'],
           winningPostId: '7', // Add winner for completed competition
@@ -169,27 +170,37 @@ export default function CompetitionList() {
 
   return (
     <div className="space-y-6">
-      {/* @review - config {contractStatus === "not-deployed" && (
-        <Alert variant="destructive" className="mb-4 animate-in fade-in-50 duration-300 cyber-card-pink">
+      {/* Show contract not found or error only if contract is not deployed or there is an error */}
+      {contractStatus === 'not-deployed' && (
+        <Alert
+          variant="destructive"
+          className="mb-4 animate-in fade-in-50 duration-300 cyber-card-pink"
+        >
           <AlertCircle className="h-4 w-4 text-neon-pink" />
           <AlertTitle className="text-neon-pink">Contract Not Found</AlertTitle>
           <AlertDescription className="text-gray-300">
-            The contract could not be found at the specified address. Please check your contract address in the
-            configuration.
-            <div className="mt-2 text-xs font-mono break-all text-neon-blue">{CONTRACT_ADDRESS}</div>
+            The contract could not be found at the specified address. Please
+            check your contract address in the configuration.
+            <div className="mt-2 text-xs font-mono break-all text-neon-blue">
+              {CONTRACT_ADDRESS}
+            </div>
           </AlertDescription>
         </Alert>
       )}
 
-      {error && (
-        <Alert variant="destructive" className="mb-4 animate-in fade-in-50 duration-300 cyber-card-pink">
+      {error && contractStatus === 'not-deployed' && (
+        <Alert
+          variant="destructive"
+          className="mb-4 animate-in fade-in-50 duration-300 cyber-card-pink"
+        >
           <AlertCircle className="h-4 w-4 text-neon-pink" />
           <AlertTitle className="text-neon-pink">Error</AlertTitle>
           <AlertDescription className="text-gray-300">{error}</AlertDescription>
         </Alert>
-      )} */}
+      )}
 
-      {useMockData && (
+      {/* Show demo data warning only if using mock data */}
+      {useMockData && contractStatus === 'not-deployed' && (
         <Alert className="mb-4 animate-in fade-in-50 duration-300 cyber-card">
           <AlertTriangle className="h-4 w-4 text-neon-yellow" />
           <AlertTitle className="text-neon-yellow">Using Demo Data</AlertTitle>
@@ -199,7 +210,8 @@ export default function CompetitionList() {
         </Alert>
       )}
 
-      {competitions.length === 0 ? (
+      {/* Show no competitions if contract is deployed but none exist */}
+      {contractStatus === 'deployed' && competitions.length === 0 ? (
         <Card className="cyber-card">
           <CardHeader>
             <CardTitle className="text-neon-blue">No Competitions</CardTitle>

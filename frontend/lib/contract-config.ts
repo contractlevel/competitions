@@ -1,89 +1,78 @@
 // ⚠️ IMPORTANT: Replace these with your actual contract addresses ⚠️
 // The current addresses are placeholders and will not work
-export const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000'; // Replace with your ContentCompetition contract address
+export const CONTRACT_ADDRESS = '0xcA7090a104562915F8717bd692F8A2d6795f2A2E'; // testnet deployment
 export const FEED_CONTRACT_ADDRESS =
-  '0x0000000000000000000000000000000000000000'; // Replace with your Lens Feed contract address
-
+  '0x31232Cb7dE0dce17949ffA58E9E38EEeB367C871'; // testnet global lens feed
 // Lens Testnet Chain ID
 export const LENS_TESTNET_CHAIN_ID = 37111;
 
-export const CONTRACT_ABI = [
-  // createCompetition
+export const COMPETITIONS_ABI = [
+  'function createCompetition(string theme, uint256 submissionDeadline, uint256 votingDeadline) external payable returns (uint256)',
+  'function submitPost(uint256 competitionId, uint256 postId) external',
+  'function vote(uint256 competitionId, uint256 postId) external',
+  'function distributePrizePool(uint256 competitionId) external returns (address, uint256, uint256)',
+  'function getCompetition(uint256 competitionId) external view returns (address, bool, string, uint256, uint256, uint256, uint256, uint256[])',
+  'function getSubmissionDeadline(uint256 competitionId) external view returns (uint256)',
+  'function getVotingDeadline(uint256 competitionId) external view returns (uint256)',
+  'function getVotes(uint256 competitionId, uint256 postId) external view returns (uint256)',
+  'function getWinningAuthor(uint256 competitionId) external view returns (address)',
+  'function getSubmitted(uint256 competitionId, uint256 postId) external view returns (bool)',
+  'function getVoted(uint256 competitionId, address voter) external view returns (bool)',
+  'function getPrizeDistributed(uint256 competitionId) external view returns (bool)',
+  'function getCreator(uint256 competitionId) external view returns (address)',
+  'function getPrizePool(uint256 competitionId) external view returns (uint256)',
+  'function getWinningPostId(uint256 competitionId) external view returns (uint256)',
+  'function getSubmissions(uint256 competitionId) external view returns (uint256[])',
+  'function getTheme(uint256 competitionId) external view returns (string)',
+] as const;
+
+export const FEED_ABI = [
+  // Minimal ABI entries as strings
+  'function postExists(uint256 postId) external view returns (bool)',
+  'function getPostAuthor(uint256 postId) external view returns (address)',
+
+  // Full ABI object for getPost
   {
-    inputs: [
-      { name: 'theme', type: 'string' },
-      { name: 'submissionDeadline', type: 'uint256' },
-      { name: 'votingDeadline', type: 'uint256' },
-    ],
-    name: 'createCompetition',
-    outputs: [
-      { name: 'ccipMessageId', type: 'bytes32' },
-      { name: 'competitionId', type: 'uint256' },
-    ],
-    stateMutability: 'payable',
-    type: 'function',
-  },
-  // submitPost
-  {
-    inputs: [
-      { name: 'competitionId', type: 'uint256' },
-      { name: 'postId', type: 'uint256' },
-    ],
-    name: 'submitPost',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  // vote
-  {
-    inputs: [
-      { name: 'competitionId', type: 'uint256' },
-      { name: 'postId', type: 'uint256' },
-    ],
-    name: 'vote',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  // getCompetition
-  {
-    inputs: [{ name: 'competitionId', type: 'uint256' }],
-    name: 'getCompetition',
+    inputs: [{ internalType: 'uint256', name: 'postId', type: 'uint256' }],
+    name: 'getPost',
     outputs: [
       {
         components: [
-          { name: 'creator', type: 'address' },
-          { name: 'prizeDistributed', type: 'bool' },
-          { name: 'theme', type: 'string' },
-          { name: 'submissionDeadline', type: 'uint256' },
-          { name: 'votingDeadline', type: 'uint256' },
-          { name: 'prizePool', type: 'uint256' },
-          { name: 'submissions', type: 'uint256[]' },
-          { name: 'winningPostId', type: 'uint256' },
+          { internalType: 'address', name: 'author', type: 'address' },
+          {
+            internalType: 'uint256',
+            name: 'authorPostSequentialId',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'postSequentialId',
+            type: 'uint256',
+          },
+          { internalType: 'string', name: 'contentURI', type: 'string' },
+          { internalType: 'uint256', name: 'rootPostId', type: 'uint256' },
+          { internalType: 'uint256', name: 'repostedPostId', type: 'uint256' },
+          { internalType: 'uint256', name: 'quotedPostId', type: 'uint256' },
+          { internalType: 'uint256', name: 'repliedPostId', type: 'uint256' },
+          { internalType: 'uint80', name: 'creationTimestamp', type: 'uint80' },
+          { internalType: 'address', name: 'creationSource', type: 'address' },
+          {
+            internalType: 'uint80',
+            name: 'lastUpdatedTimestamp',
+            type: 'uint80',
+          },
+          {
+            internalType: 'address',
+            name: 'lastUpdateSource',
+            type: 'address',
+          },
+          { internalType: 'bool', name: 'isDeleted', type: 'bool' },
         ],
-        name: 'competition',
+        internalType: 'struct IFeed.Post',
+        name: 'post',
         type: 'tuple',
       },
     ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  // getVotes
-  {
-    inputs: [
-      { name: 'competitionId', type: 'uint256' },
-      { name: 'postId', type: 'uint256' },
-    ],
-    name: 'getVotes',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  // getWinningAuthor
-  {
-    inputs: [{ name: 'competitionId', type: 'uint256' }],
-    name: 'getWinningAuthor',
-    outputs: [{ name: '', type: 'address' }],
     stateMutability: 'view',
     type: 'function',
   },

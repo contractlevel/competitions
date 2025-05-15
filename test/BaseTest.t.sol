@@ -2,105 +2,64 @@
 pragma solidity 0.8.26;
 
 import {Test, console2, Vm} from "forge-std/Test.sol";
-
-import {DeployContentCompetition, ContentCompetition} from "../script/deploy/DeployContentCompetition.s.sol";
-import {DeployCCAutomation, CCAutomation, HelperConfig} from "../script/deploy/DeployCCAutomation.s.sol";
-
-// import {CCIPLocalSimulatorFork} from "@chainlink-local/src/ccip/CCIPLocalSimulatorFork.sol";
+import {DeployCompetitions, Competitions, HelperConfig} from "../script/deploy/DeployCompetitions.s.sol";
+import {
+    IFeed,
+    CreatePostParams,
+    Post,
+    KeyValue,
+    RuleProcessingParams,
+    RuleChange
+} from "@lens-protocol/lens-v3/contracts/core/interfaces/IFeed.sol";
 
 contract BaseTest is Test {
     /*//////////////////////////////////////////////////////////////
                                VARIABLES
     //////////////////////////////////////////////////////////////*/
-    string internal constant LENS_SEPOLIA_RPC_URL = "https://rpc.testnet.lens.dev";
-    uint256 internal constant LENS_SEPOLIA_STARTING_BLOCK = 3491282; // https://testnet.lenscan.io/
-    uint256 internal constant LENS_SEPOLIA_CHAIN_ID = 37111;
+    string internal constant LENS_MAINNET_RPC_URL = "https://rpc.lens.xyz"; // https://rpc.testnet.lens.xyz
+    uint256 internal constant LENS_MAINNET_STARTING_BLOCK = 1685437;
+    uint256 internal constant LENS_MAINNET_CHAIN_ID = 232;
     uint256 internal lensFork;
-    string internal ETH_SEPOLIA_RPC_URL = vm.envString("ETH_SEPOLIA_RPC_URL");
-    uint256 internal constant ETH_SEPOLIA_STARTING_BLOCK = 8274222; // https://sepolia.etherscan.io/
-    uint256 internal constant ETH_SEPOLIA_CHAIN_ID = 11155111;
-    uint256 internal ethFork;
 
-    // CCIPLocalSimulatorFork internal ccipLocalSimulatorFork;
-
-    ContentCompetition internal comp;
-    CCAutomation internal ccAuto;
-    HelperConfig internal lensConfig;
-    HelperConfig internal ethConfig;
+    Competitions internal comp;
+    HelperConfig internal config;
     address internal feed;
-    address internal lensLink;
-    address internal ethLink;
-    address internal lensCcipRouter;
-    address internal ethCcipRouter;
-    uint64 internal lensChainSelector;
-    uint64 internal ethChainSelector;
-    uint256 internal ccipGasLimit;
 
     address internal owner = makeAddr("owner");
     address internal user = makeAddr("user");
     address internal creator = makeAddr("creator");
+    address internal author = makeAddr("author");
+    address internal voter = makeAddr("voter");
+
+    uint256 internal constant ONE_ETH = 1e18;
+    uint256 internal constant TEN_LINK = 1e18 * 10;
 
     /*//////////////////////////////////////////////////////////////
                                  SET UP
     //////////////////////////////////////////////////////////////*/
     function setUp() public virtual {
+        _forkLens();
         _deployInfra();
-        // _setCrossChainVars();
-    }
 
-    // function setUp() public virtual {
-    //     lensFork = vm.createSelectFork(LENS_SEPOLIA_RPC_URL, LENS_SEPOLIA_STARTING_BLOCK);
-    //     assertEq(block.chainid, LENS_SEPOLIA_CHAIN_ID);
-    //     ContentCompetition comp = new ContentCompetition(address(1), address(1), address(1), 1);
-    // }
+        vm.deal(creator, ONE_ETH);
+    }
 
     /// @notice empty test to ignore file in coverage report
     function test_baseTest() public {}
 
+    function _forkLens() internal {
+        lensFork = vm.createSelectFork(LENS_MAINNET_RPC_URL, LENS_MAINNET_STARTING_BLOCK);
+        assertEq(block.chainid, LENS_MAINNET_CHAIN_ID);
+    }
+
     function _deployInfra() internal {
-        // // @review - should this be after the chain forks?
-        // ccipLocalSimulatorFork = new CCIPLocalSimulatorFork();
-        // vm.makePersistent(address(ccipLocalSimulatorFork));
-
-        /// @dev fork lens
-        lensFork = vm.createSelectFork(LENS_SEPOLIA_RPC_URL, LENS_SEPOLIA_STARTING_BLOCK);
-        assertEq(block.chainid, LENS_SEPOLIA_CHAIN_ID);
-        /// @dev deploy competition infrastructure
-        // DeployContentCompetition deployComp = new DeployContentCompetition();
-        // (comp, lensConfig) = deployComp.run();
-
-        lensConfig = new HelperConfig();
-        /// @dev fetch args passed in constructor by deploy script
-        (feed, lensLink, lensCcipRouter, ccipGasLimit, ethChainSelector,,) = lensConfig.activeNetworkConfig();
-
-        ContentCompetition comp = new ContentCompetition(feed, lensLink, lensCcipRouter, ccipGasLimit);
+        /// @dev get Lens global Feed contract and deploy Competitions contract
+        config = new HelperConfig();
+        (feed,,,,,,) = config.activeNetworkConfig();
+        comp = new Competitions(feed);
         /// @dev transfer ownership
         vm.prank(comp.owner());
         comp.transferOwnership(owner);
-
-        // /// @dev fork eth
-        // ethFork = vm.createSelectFork(ETH_SEPOLIA_RPC_URL, ETH_SEPOLIA_STARTING_BLOCK);
-        // assertEq(block.chainid, ETH_SEPOLIA_CHAIN_ID);
-        // /// @dev deploy automation infrastructure
-        // DeployCCAutomation deployCcAuto = new DeployCCAutomation();
-        // (ccAuto, ethConfig) = deployCcAuto.run();
-        // /// @dev transfer ownership
-        // vm.prank(ccAuto.owner());
-        // ccAuto.transferOwnership(owner);
-        // /// @dev fetch args passed in constructor by deploy script
-        // (, ethLink, ethCcipRouter,, lensChainSelector,,) = ethConfig.activeNetworkConfig();
-    }
-
-    function _setCrossChainVars() internal {
-        _changePrank(owner);
-
-        _selectFork(lensFork);
-        comp.setAllowedChain(ethChainSelector);
-        comp.setAllowedPeer(address(ccAuto));
-
-        // _selectFork(ethFork);
-        // ccAuto.setAllowedChain(lensChainSelector);
-        // ccAuto.setAllowedPeer(address(comp));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -115,11 +74,60 @@ contract BaseTest is Test {
         vm.stopPrank();
     }
 
-    function _selectFork(uint256 fork) internal {
-        vm.selectFork(fork);
+    function _createCompetition() internal returns (uint256 competitionId) {
+        string memory theme = "pirates";
+        uint256 submissionDeadline = block.timestamp + 10 minutes;
+        uint256 votingDeadline = submissionDeadline + 10 minutes;
+
+        _changePrank(creator);
+        competitionId = comp.createCompetition{value: ONE_ETH}(theme, submissionDeadline, votingDeadline);
     }
 
-    // function _selectForkAndRoute(uint256 fork) internal {
-    //     ccipLocalSimulatorFork.switchChainAndRouteMessage(fork);
-    // }
+    function _createPost() internal returns (uint256 postId) {
+        CreatePostParams memory postParams = CreatePostParams({
+            author: author,
+            contentURI: "https://example.com",
+            repostedPostId: 0,
+            quotedPostId: 0,
+            repliedPostId: 0,
+            ruleChanges: new RuleChange[](0),
+            extraData: new KeyValue[](0)
+        });
+        KeyValue[] memory customParams = new KeyValue[](0);
+        RuleProcessingParams[] memory feedRulesParams = new RuleProcessingParams[](0);
+        RuleProcessingParams[] memory rootPostRulesParams = new RuleProcessingParams[](0);
+        RuleProcessingParams[] memory quotedPostRulesParams = new RuleProcessingParams[](0);
+
+        _changePrank(author);
+        postId = IFeed(feed).createPost(
+            postParams, customParams, feedRulesParams, rootPostRulesParams, quotedPostRulesParams
+        );
+    }
 }
+
+// bytes4(keccak256("InvalidMsgSender()"))
+
+/**
+ * function createPost(
+ *             CreatePostParams calldata postParams,
+ *             KeyValue[] calldata customParams,
+ *             RuleProcessingParams[] calldata feedRulesParams,
+ *             RuleProcessingParams[] calldata rootPostRulesParams,
+ *             RuleProcessingParams[] calldata quotedPostRulesParams
+ *         ) external returns (uint256)
+ */
+
+/**
+ * struct KeyValue {
+ *     bytes32 key;
+ *     bytes value;
+ * }
+ */
+
+/**
+ * struct RuleProcessingParams {
+ *     address ruleAddress;
+ *     bytes32 configSalt;
+ *     KeyValue[] ruleParams;
+ * }
+ */

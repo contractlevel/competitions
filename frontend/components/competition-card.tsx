@@ -1,28 +1,35 @@
-import { formatDate, truncateAddress } from "@/lib/contract-utils"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import Link from "next/link"
-import { CalendarDays, Crown, Trophy, Users } from "lucide-react"
+import { formatDate, truncateAddress } from '@/lib/contract-utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import Link from 'next/link';
+import { CalendarDays, Crown, Trophy, Users } from 'lucide-react';
 
 interface CompetitionCardProps {
   competition: {
-    id: string
-    theme: string
-    prizePool: string
-    submissionDeadline: number
-    votingDeadline: number
-    submissions: string[]
-    winningPostId?: string
-    winningAuthor?: string
-  }
+    id: string;
+    theme: string;
+    prizePool: string;
+    submissionDeadline: number;
+    votingDeadline: number;
+    submissions: string[];
+    winningPostId?: string;
+    winningAuthor?: string;
+  };
 }
 
 export default function CompetitionCard({ competition }: CompetitionCardProps) {
-  const now = Math.floor(Date.now() / 1000)
-  const isSubmissionOpen = now < competition.submissionDeadline
-  const isVotingOpen = now >= competition.submissionDeadline && now < competition.votingDeadline
-  const isCompleted = now >= competition.votingDeadline
+  const now = Math.floor(Date.now() / 1000);
+  const isSubmissionOpen = now < competition.submissionDeadline;
+  const isVotingOpen =
+    now >= competition.submissionDeadline && now < competition.votingDeadline;
+  const isCompleted = now >= competition.votingDeadline;
 
   return (
     <Card className="w-full overflow-hidden transition-all duration-300 hover:shadow-lg cyber-card relative">
@@ -38,16 +45,30 @@ export default function CompetitionCard({ competition }: CompetitionCardProps) {
               Competition #{competition.id}
             </CardTitle>
             <CardDescription className="flex items-center mt-1 text-neon-pink">
-              Prize Pool: {competition.prizePool} GRASS
+              Prize Pool: {competition.prizePool} GHO
             </CardDescription>
           </div>
           <Badge
-            variant={isSubmissionOpen ? "default" : isVotingOpen ? "secondary" : "outline"}
+            variant={
+              isSubmissionOpen
+                ? 'default'
+                : isVotingOpen
+                ? 'secondary'
+                : 'outline'
+            }
             className={`px-3 py-1 ${
-              isSubmissionOpen ? "cyber-badge-green" : isVotingOpen ? "cyber-badge" : "cyber-badge-pink"
+              isSubmissionOpen
+                ? 'cyber-badge-green'
+                : isVotingOpen
+                ? 'cyber-badge'
+                : 'cyber-badge-pink'
             }`}
           >
-            {isSubmissionOpen ? "Submission Open" : isVotingOpen ? "Voting Open" : "Completed"}
+            {isSubmissionOpen
+              ? 'Submission Open'
+              : isVotingOpen
+              ? 'Voting Open'
+              : 'Completed'}
           </Badge>
         </div>
       </CardHeader>
@@ -56,7 +77,9 @@ export default function CompetitionCard({ competition }: CompetitionCardProps) {
         {/* Theme section with cyber styling */}
         <div className="mb-4">
           <h3 className="text-sm font-medium mb-1 text-neon-blue">Theme</h3>
-          <p className="bg-cyber-dark p-3 rounded-md border border-neon-blue/20 text-gray-300">{competition.theme}</p>
+          <p className="bg-cyber-dark p-3 rounded-md border border-neon-blue/20 text-gray-300">
+            {competition.theme}
+          </p>
         </div>
 
         {/* Competition details with cyber icons */}
@@ -64,11 +87,15 @@ export default function CompetitionCard({ competition }: CompetitionCardProps) {
           <div className="flex items-center text-sm text-gray-400">
             <CalendarDays className="h-4 w-4 mr-2 text-neon-pink" />
             {isSubmissionOpen ? (
-              <span>Submissions close: {formatDate(competition.submissionDeadline)}</span>
+              <span>
+                Submissions close: {formatDate(competition.submissionDeadline)}
+              </span>
             ) : isVotingOpen ? (
               <span>Voting ends: {formatDate(competition.votingDeadline)}</span>
             ) : (
-              <span>Completed on: {formatDate(competition.votingDeadline)}</span>
+              <span>
+                Completed on: {formatDate(competition.votingDeadline)}
+              </span>
             )}
           </div>
           <div className="flex items-center text-sm text-gray-400">
@@ -109,5 +136,5 @@ export default function CompetitionCard({ competition }: CompetitionCardProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

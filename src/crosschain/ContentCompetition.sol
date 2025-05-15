@@ -2,12 +2,17 @@
 pragma solidity 0.8.26;
 
 import {IFeed, Post} from "@lens-protocol/lens-v3/contracts/core/interfaces/IFeed.sol";
-import {CrossChain, IRouterClient, Client} from "./CrossChain.sol";
-import {IContentCompetition} from "./interfaces/IContentCompetition.sol";
+import {LensCrossChain, IRouterClient, Client} from "./LensCrossChain.sol";
+import {IContentCompetition} from "../interfaces/IContentCompetition.sol";
 
 /// @title ContentCompetition
 /// @author @contractlevel
-contract ContentCompetition is IContentCompetition, CrossChain {
+/// @notice This contract can be used to create competitions for Lens posts.
+/// Competition creators must provide a competition theme, prize pool, submission deadline and voting deadline.
+/// Users can then submit Lens posts to competitions during the submission period.
+/// Users can vote on a submitted post in a competititon during the voting period.
+/// The author of the Lens Feed post with the most votes wins the prize pool.
+contract ContentCompetition is IContentCompetition, LensCrossChain {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -20,9 +25,10 @@ contract ContentCompetition is IContentCompetition, CrossChain {
     error ContentCompetition__NoZeroValue();
     error ContentCompetition__WithdrawalFailed();
     error ContentCompetition__PostAlreadySubmitted(uint256 competitionId, uint256 postId);
-    error ContentCompetition_AlreadyVoted();
+    error ContentCompetition__AlreadyVoted();
     error ContentCompetition__InvalidPost();
     error ContentCompetition__VotingClosed();
+    error Competition__VotingNotStarted();
 
     /*//////////////////////////////////////////////////////////////
                                VARIABLES
@@ -34,6 +40,7 @@ contract ContentCompetition is IContentCompetition, CrossChain {
         uint256 submissionDeadline; // 32 bytes // When submissions end
         uint256 votingDeadline; // 32 bytes // When voting ends
         uint256 prizePool; // 32 bytes // Native token prize pool
+        uint256 winningPostId; // 32 bytes // Post ID for the winner!
         uint256[] submissions; // 32-byte pointer // List of submitted postIds for iteration
         mapping(uint256 postId => bool submitted) submitted; // Tracks what has been submitted
         mapping(uint256 postId => uint256 votes) votes; // Votes per submission
@@ -87,9 +94,7 @@ contract ContentCompetition is IContentCompetition, CrossChain {
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-    constructor(address feed, address link, address ccipRouter, uint256 ccipGasLimit)
-        CrossChain(link, ccipRouter, ccipGasLimit)
-    {
+    constructor(address feed, address ccipRouter, uint256 ccipGasLimit) LensCrossChain(ccipRouter, ccipGasLimit) {
         i_feed = IFeed(feed);
         s_competitionCount = 1;
     }
@@ -120,8 +125,13 @@ contract ContentCompetition is IContentCompetition, CrossChain {
 
         /// @dev separate protocolFee and prizePool, update storage
         uint256 protocolFee = _calculateProtocolFee(msg.value);
-        uint256 prizePool = msg.value - protocolFee;
-        if (protocolFee != 0) s_protocolFees += protocolFee;
+        uint256 prizePool;
+        if (protocolFee != 0) {
+            prizePool = msg.value - protocolFee;
+            s_protocolFees += protocolFee;
+        } else {
+            prizePool = msg.value;
+        }
 
         /// @dev update storage with competition details
         Competition storage s_comp = s_competitions[competitionId];
@@ -164,8 +174,9 @@ contract ContentCompetition is IContentCompetition, CrossChain {
     function vote(uint256 competitionId, uint256 postId) external revertIfZero(competitionId) revertIfZero(postId) {
         Competition storage s_comp = s_competitions[competitionId];
 
+        if (block.timestamp <= s_comp.submissionDeadline) revert Competition__VotingNotStarted();
         if (block.timestamp > s_comp.votingDeadline) revert ContentCompetition__VotingClosed();
-        if (s_comp.hasVoted[msg.sender]) revert ContentCompetition_AlreadyVoted();
+        if (s_comp.hasVoted[msg.sender]) revert ContentCompetition__AlreadyVoted();
         if (!s_comp.submitted[postId]) revert ContentCompetition__InvalidPost();
 
         // Record the vote
@@ -184,11 +195,6 @@ contract ContentCompetition is IContentCompetition, CrossChain {
         emit ProtocolFeesWithdrawn(fees);
     }
 
-    /// @notice onlyOwner utility function for withdrawing LINK
-    function withdrawLink() external onlyOwner {
-        i_link.transfer(msg.sender, i_link.balanceOf(address(this)));
-    }
-
     /*//////////////////////////////////////////////////////////////
                             INTERNAL
     //////////////////////////////////////////////////////////////*/
@@ -200,9 +206,8 @@ contract ContentCompetition is IContentCompetition, CrossChain {
         /// @dev handle fees
         uint64 dstChainSelector = s_allowedChain;
         uint256 fees = _getCCIPFees(dstChainSelector, evm2AnyMessage);
-        i_link.approve(i_ccipRouter, fees);
         /// @dev send message
-        ccipMessageId = IRouterClient(i_ccipRouter).ccipSend(dstChainSelector, evm2AnyMessage);
+        ccipMessageId = IRouterClient(i_ccipRouter).ccipSend{value: fees}(dstChainSelector, evm2AnyMessage);
     }
 
     /// @param message Any2EVMMessage.
@@ -230,13 +235,31 @@ contract ContentCompetition is IContentCompetition, CrossChain {
         uint256[] memory submissions = s_comp.submissions;
         uint256 submissionCount = submissions.length;
 
-        for (uint256 i = 0; i < submissionCount; ++i) {
-            uint256 postId = submissions[i];
-            uint256 voteCount = s_comp.votes[postId];
-            // @review - what if there is a tie?
-            if (voteCount > maxVotes) {
-                maxVotes = voteCount;
-                winningPostId = postId;
+        if (submissionCount == 0) {
+            // No submissions: prize goes to creator
+            winner = s_comp.creator;
+            winningPostId = 0;
+        } else {
+            // Find the post with the most votes
+            for (uint256 i = 0; i < submissionCount; ++i) {
+                uint256 postId = submissions[i];
+                uint256 voteCount = s_comp.votes[postId];
+                /// @dev if there is a tie, the post that got the most votes first is the winner
+                // @review - The "first to reach" rule is approximated by submission order, not vote timestamp.
+                if (voteCount > maxVotes) {
+                    maxVotes = voteCount;
+                    winningPostId = postId;
+                }
+            }
+
+            if (maxVotes == 0) {
+                // Submissions exist but no votes: prize goes to creator
+                winner = s_comp.creator;
+                winningPostId = 0;
+            } else {
+                // Submissions with votes: prize goes to the author of the winning post
+                winner = i_feed.getPostAuthor(winningPostId);
+                if (winner == address(0)) winner = s_comp.creator;
             }
         }
 
@@ -247,9 +270,11 @@ contract ContentCompetition is IContentCompetition, CrossChain {
 
         /// @dev update state
         s_comp.prizeDistributed = true;
+        s_comp.winningPostId = winningPostId;
 
         /// @dev send prize
         prizePool = s_comp.prizePool;
+
         (bool success,) = winner.call{value: prizePool}("");
         if (!success) revert ContentCompetition__TransferFailed();
 
@@ -259,5 +284,78 @@ contract ContentCompetition is IContentCompetition, CrossChain {
     function _calculateProtocolFee(uint256 prizePool) internal pure returns (uint256 protocolFee) {
         // @review - could this cause under/overflow issues?
         return prizePool / FEE_DENOMINATOR;
+    }
+
+    /// this is for ccip payments
+    receive() external payable {}
+
+    /*//////////////////////////////////////////////////////////////
+                                 GETTER
+    //////////////////////////////////////////////////////////////*/
+    function getCalculatedProcolFee(uint256 prizePool) external pure returns (uint256) {
+        return _calculateProtocolFee(prizePool);
+    }
+
+    function getAllowedChainSelector() external view returns (uint64) {
+        return s_allowedChain;
+    }
+
+    function getCompetition(uint256 competitionId)
+        external
+        view
+        returns (
+            address creator,
+            bool prizeDistributed,
+            string memory theme,
+            uint256 submissionDeadline,
+            uint256 votingDeadline,
+            uint256 prizePool,
+            uint256 winningPostId,
+            uint256[] memory submissions
+        )
+    {
+        Competition storage s_comp = s_competitions[competitionId];
+        return (
+            s_comp.creator,
+            s_comp.prizeDistributed,
+            s_comp.theme,
+            s_comp.submissionDeadline,
+            s_comp.votingDeadline,
+            s_comp.prizePool,
+            s_comp.winningPostId,
+            s_comp.submissions
+        );
+    }
+
+    function getSubmissionDeadline(uint256 competitionId) external view returns (uint256) {
+        return s_competitions[competitionId].submissionDeadline;
+    }
+
+    function getVotingDeadline(uint256 competitionId) external view returns (uint256) {
+        return s_competitions[competitionId].votingDeadline;
+    }
+
+    function getVotes(uint256 competitionId, uint256 postId) external view returns (uint256) {
+        return s_competitions[competitionId].votes[postId];
+    }
+
+    function getWinningAuthor(uint256 competitionId) external view returns (address) {
+        return i_feed.getPostAuthor(s_competitions[competitionId].winningPostId);
+    }
+
+    function getSubmitted(uint256 competitionId, uint256 postId) external view returns (bool) {
+        return s_competitions[competitionId].submitted[postId];
+    }
+
+    function getVoted(uint256 competitionId, address voter) external view returns (bool) {
+        return s_competitions[competitionId].hasVoted[voter];
+    }
+
+    function getPrizeDistributed(uint256 competitionId) external view returns (bool) {
+        return s_competitions[competitionId].prizeDistributed;
+    }
+
+    function getCompetitionCreator(uint256 competitionId) external view returns (address) {
+        return s_competitions[competitionId].creator;
     }
 }

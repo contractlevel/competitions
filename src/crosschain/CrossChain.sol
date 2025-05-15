@@ -6,7 +6,7 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interface
 import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {IRouterClient, Client} from "@chainlink/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 
-import {ICrossChain} from "./interfaces/ICrossChain.sol";
+import {ICrossChain} from "../interfaces/ICrossChain.sol";
 
 /// @notice inherit this for crosschain functionality
 // Owner must:
@@ -104,5 +104,12 @@ abstract contract CrossChain is Ownable, CCIPReceiver, ICrossChain {
     function setCcipGasLimit(uint256 gasLimit) external onlyOwner {
         s_ccipGasLimit = gasLimit;
         emit CCIPGasLimitSet(gasLimit);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 GETTER
+    //////////////////////////////////////////////////////////////*/
+    function getLink() external view returns (address) {
+        return address(i_link);
     }
 }

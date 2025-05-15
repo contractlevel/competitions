@@ -58,7 +58,8 @@ export default function Home() {
         className="mb-12"
       />
 
-      {/* @review - config {!isConfigured && (
+      {/* Configuration warning commented out
+      {!isConfigured && (
         <div className="container mx-auto px-4">
           <Alert className="mb-8 animate-in fade-in-50 duration-300 cyber-card">
             <Info className="h-4 w-4 text-neon-blue" />
