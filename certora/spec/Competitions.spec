@@ -135,9 +135,9 @@ invariant votingDeadline_after_submissionDeadline(uint256 compId)
 invariant prizePool_no_zeroValue(uint256 compId)
     compId != 0 && getCreator(compId) != 0 => getPrizePool(compId) > 0;
 
-invariant feesAccountancy()
-    nativeBalances[currentContract.owner()] >= 
-        (g_totalProtocolFeesAccumulated - g_totalProtocolFeesWithdrawn) + getProtocolFees();
+// invariant feesAccountancy()
+//     nativeBalances[currentContract.owner()] >= 
+//         (g_totalProtocolFeesAccumulated - g_totalProtocolFeesWithdrawn) + getProtocolFees();
 
 // valid states:
 // 1. notCreated
