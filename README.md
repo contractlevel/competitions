@@ -4,6 +4,8 @@
 
 **[Watch demo video](https://www.youtube.com/watch?v=uFq8fUUIt0g)**
 
+**Try it at [contractlevel.com](https://contractlevel.com)!**
+
 ## Overview
 
 Contract Level Competitions is a decentralized platform built on the Lens Chain, empowering anyone to create and participate in transparent, community-driven competitions. By integrating with the Lens ecosystem, the platform leverages Lens posts from the global feed as competition entries, fostering social engagement and content creation. Whether it's a creative challenge, a hackathon, or a content showdown, Contract Level Competitions brings a novel, blockchain-based approach to incentivizing participation and rewarding excellence.
