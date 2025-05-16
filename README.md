@@ -37,9 +37,9 @@ Contract Level Competitions is a decentralized platform built on the Lens Chain,
       - [Unit Tests](#unit-tests)
       - [Formal Verification](#formal-verification)
     - [Frontend](#frontend-1)
-    - [Future Enhancements](#future-enhancements)
-    - [Links and Resources](#links-and-resources)
-    - [Additional Comments](#additional-comments)
+  - [Future Enhancements](#future-enhancements)
+  - [Links and Resources](#links-and-resources)
+  - [Additional Comments](#additional-comments)
 
 ## Features and Functionality
 
@@ -145,18 +145,18 @@ npm i
 npm run dev
 ```
 
-### Future Enhancements
+## Future Enhancements
 
 - **Sybil-Resistance**: Implement robust mechanisms to prevent vote manipulation and ensure fair participation.
 
 - **Automation**: Integrate Chainlink Automation when available on Lens mainnet for fully automated prize distribution.
 
-### Links and Resources
+## Links and Resources
 
 - **Mainnet Deployment**: 0xd2550fCb1C389401E9F8802e68b093fcc0595993
 
 - **Testnet Deployment**: 0xcA7090a104562915F8717bd692F8A2d6795f2A2E
 
-### Additional Comments
+## Additional Comments
 
 Deployed contracts were unable to be verified on the lens explorer because only <= 0.8.24 was compatible, and the Lens Feed contract is 0.8.26.
