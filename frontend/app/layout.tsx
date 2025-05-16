@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Contract Level',
-  description: 'A platform for content creation and voting',
+  description: 'A platform for decentralized competitions',
 };
 
 export default function RootLayout({

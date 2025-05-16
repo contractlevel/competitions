@@ -30,10 +30,11 @@ contract Competitions is Ownable, ICompetitions {
     error Competitions__VotingClosed();
     error Competitions__VotingNotStarted();
     error Competitions__VotingNotFinished();
+    error Competitions__PrizeAlreadyDistributed();
+
     /*//////////////////////////////////////////////////////////////
                                VARIABLES
     //////////////////////////////////////////////////////////////*/
-
     struct Competition {
         address creator; // 20-byte pointer // Used to return prizePool if no winner
         bool prizeDistributed; // 1 byte // Ensures prize is distributed only once
@@ -194,6 +195,7 @@ contract Competitions is Ownable, ICompetitions {
         /// @dev update storage with the competitionId and send prize pool to winning author
         Competition storage s_comp = s_competitions[competitionId];
         if (block.timestamp <= s_comp.votingDeadline) revert Competitions__VotingNotFinished();
+        if (s_comp.prizeDistributed) revert Competitions__PrizeAlreadyDistributed();
 
         /// @dev find submission with most votes
         uint256 maxVotes;
@@ -262,6 +264,10 @@ contract Competitions is Ownable, ICompetitions {
     //////////////////////////////////////////////////////////////*/
     function getProtocolFee(uint256 prizePool) external pure returns (uint256) {
         return _calculateProtocolFee(prizePool);
+    }
+
+    function getProtocolFees() external view returns (uint256) {
+        return s_protocolFees;
     }
 
     function getCompetition(uint256 competitionId)

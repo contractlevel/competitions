@@ -1,10 +1,10 @@
 // ⚠️ IMPORTANT: Replace these with your actual contract addresses ⚠️
 // The current addresses are placeholders and will not work
-export const CONTRACT_ADDRESS = '0xcA7090a104562915F8717bd692F8A2d6795f2A2E'; // testnet deployment
+export const CONTRACT_ADDRESS = '0xd2550fCb1C389401E9F8802e68b093fcc0595993'; // testnet deployment
 export const FEED_CONTRACT_ADDRESS =
-  '0x31232Cb7dE0dce17949ffA58E9E38EEeB367C871'; // testnet global lens feed
+  '0xcB5E109FFC0E15565082d78E68dDDf2573703580'; // testnet global lens feed
 // Lens Testnet Chain ID
-export const LENS_TESTNET_CHAIN_ID = 37111;
+export const LENS_TESTNET_CHAIN_ID = 232;
 
 export const COMPETITIONS_ABI = [
   'function createCompetition(string theme, uint256 submissionDeadline, uint256 votingDeadline) external payable returns (uint256)',

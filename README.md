@@ -1,72 +1,142 @@
 # Contract Level Competitions
 
-Developed for the [2025 Lens Spring Hackathon](https://lens.xyz/news/lens-spring-hackathon).
+**Developed for the [2025 Lens Spring Hackathon](https://lens.xyz/news/lens-spring-hackathon)**
 
----
-
-[CCAutomation deployment on ETH Sepolia](https://sepolia.etherscan.io/address/0x05e158c17da90ea53b4dfc939dcdaf3899e6afd1#code)
-
-[Automation upkeep](https://automation.chain.link/sepolia/106496519080448525428577726796186347537085405451406677883800369809437331266302)
-
-[ContentCompetition deployment on Lens Sepolia - 0xb616C2D766Ef04b426FD1DC456A31dbEC9697B18](https://explorer.testnet.lens.xyz/address/0xb616C2D766Ef04b426FD1DC456A31dbEC9697B18)
-
-[CCIP tx for Competition creation](https://ccip.chain.link/#/side-drawer/msg/0x45aa360089328c06635025145c2e986d5b039fc99d9b2ba400a099a531ac9b65)
+**[Watch demo video](https://www.youtube.com/watch?v=uFq8fUUIt0g)**
 
 ## Overview
 
-Contract Level Competitions are automated and transparent competitions that anyone can create. To create a competition, a `theme`, `prizePool`, `submissionDeadline`, and `votingDeadline` must be provided. Submissions take the form of posts from the [Lens-V3 Global Feed]() (or could be from a custom feed). A post cannot be submitted to a competition after its `submissionDeadline`. Votes can only be cast between the `submissionDeadline` and the `votingDeadline` for submitted posts. Only one vote can be submitted per address (implementing reliable sybil-resistance would be a later feature). The prize pool is sent to the author of the post with the most votes when the `votingDeadline` has passed. If there is a tie, the post that got the winning amount of votes first is considered the winner. If no votes have been cast in a competition, the prize pool is sent back to the competition creator.
+Contract Level Competitions is a decentralized platform built on the Lens Chain, empowering anyone to create and participate in transparent, community-driven competitions. By integrating with the Lens ecosystem, the platform leverages Lens posts from the global feed as competition entries, fostering social engagement and content creation. Whether it's a creative challenge, a hackathon, or a content showdown, Contract Level Competitions brings a novel, blockchain-based approach to incentivizing participation and rewarding excellence.
 
-A small protocol fee (0.001% of prize pool) is deducted from each competition.
+### Key Highlights
 
-As well as a "Content" Competition platform for social posts on Lens with content such as images, videos, articles, etc, this platform could also be used to reliably facilitate other types of competitions such as hackathons, where entries are submitted as posts.
+- **Built on Lens Chain**: Fully deployed on Lens mainnet, meeting the hackathon's core requirement.
+- **Lens Social Integration**: Utilizes Lens posts as submissions, tapping into the power of the Lens Social Primitive.
+- **Seamless Onboarding**: Implements ConnectKit + Continue with Family for a smooth, user-friendly wallet connection experience.
 
-## Crosschain Automation
+## Table of Contents
 
-The initial plan was to use Chainlink Automation on Lens (Testnet) to automate prize distribution once voting concludes for each respective competition. Unfortunately Chainlink Automation was not available on Lens (Testnet), however CCIP was.
+- [Contract Level Competitions](#contract-level-competitions)
+  - [Overview](#overview)
+    - [Key Highlights](#key-highlights)
+  - [Table of Contents](#table-of-contents)
+  - [Features and Functionality](#features-and-functionality)
+    - [Competition Creation](#competition-creation)
+    - [Submission Process](#submission-process)
+    - [Voting Mechanism](#voting-mechanism)
+    - [Prize Distribution](#prize-distribution)
+  - [Technical Architecture](#technical-architecture)
+    - [Smart Contracts](#smart-contracts)
+    - [Cross-Chain Adaptation](#cross-chain-adaptation)
+    - [Frontend](#frontend)
+  - [Deployment and Usage Instructions](#deployment-and-usage-instructions)
+    - [Contract Deployment](#contract-deployment)
+    - [Creating a Competition](#creating-a-competition)
+    - [Participating](#participating)
+    - [Testing and Verification](#testing-and-verification)
+      - [Unit Tests](#unit-tests)
+      - [Formal Verification](#formal-verification)
+    - [Frontend](#frontend-1)
+    - [Future Enhancements](#future-enhancements)
+    - [Links and Resources](#links-and-resources)
 
-When a competition is created, its unique identifier, `competitionId` is sent across CCIP to Eth Sepolia with the `votingDeadline`. When the `votingDeadline` is reached, Chainlink Automation will send a message back across CCIP with the `competitionId` to distribute the prize to the author of the post with the most votes.
+## Features and Functionality
 
-## Deployment
+### Competition Creation
 
-### ContentCompetition contract
+- **How It Works**: Anyone can create a competition by specifying a `theme`, `prize pool`, `submission deadline`, and `voting deadline`.
+- **Flexibility**: Themes can range from social media content (e.g., images, videos, articles) to hackathon-style challenges.
 
-`ContentCompetition` is intended to operate on Lens Sepolia, so it (currently) needs to be compiled with Foundry-zksync.
+### Submission Process
+
+- **Lens Posts as Entries**: Submissions are posts from the Lens global feed, ensuring compatibility across Lens-based platforms.
+- **Deadline Enforcement**: Posts cannot be submitted after the `submissionDeadline` passes.
+
+### Voting Mechanism
+
+- **Time-Bound Voting**: Votes are cast between the `submissionDeadline` and `votingDeadline`.
+- **One Vote Per Address**: Each address is limited to a single vote per competition (sybil-resistance planned for future iterations).
+- **Transparency**: Voting is fully on-chain, ensuring fairness and auditability.
+
+### Prize Distribution
+
+- **Winner Determination**: The post with the most votes wins the prize pool. In case of a tie, the earliest submission with the highest votes prevails.
+- **Fallback Mechanism**: If no votes are cast, the prize pool is returned to the competition creator.
+- **Protocol Fee**: A minimal fee (0.001% of the prize pool) is deducted to sustain the platform.
+
+## Technical Architecture
+
+### Smart Contracts
+
+- **Core Contract**: The `Competitions` contract handles all competition logic, including creation, submissions, voting, and prize distribution.
+- **Lens Integration**: Interacts with the Lens V3 global feed contract to validate and retrieve post data.
+- **Mainnet Deployment**: Live on Lens mainnet at [0xd2550fCb1C389401E9F8802e68b093fcc0595993](https://explorer.lens.xyz/address/0xd2550fCb1C389401E9F8802e68b093fcc0595993#contract).
+
+### Cross-Chain Adaptation
+
+- **Original Vision**: Planned to use Chainlink Automation for automated prize distribution, tested on Lens testnet with CCIP.
+- **Mainnet Adjustment**: Due to Chainlink Automation's unavailability on Lens mainnet, prize distribution is currently manual (callable by anyone post-voting). Automation will be reintroduced when supported.
+
+### Frontend
+
+- **Next.js Application**: Hosted at [contractlevel.com](http://contractlevel.com), providing an intuitive interface for creating and managing competitions.
+- **Onboarding**: Utilizes ConnectKit + Continue with Family for effortless wallet connections.
+
+## Deployment and Usage Instructions
+
+### Contract Deployment
+
+The `Competitions` contract can be deployed by running the following script:
 
 ```
-foundryup-zksync
+forge script script/deploy/DeployCompetitions.s.sol --broadcast --zksync --rpc-url <RPC_URL_HERE> --account <KEYSTORE_ACCOUNT_HERE>
 ```
 
-To prevent compilation errors these sections of `CCAutomation` should be commented out or temporarily removed:
+- **Mainnet**: Deployed on Lens Chain at [0xd2550fCb1C389401E9F8802e68b093fcc0595993](https://explorer.lens.xyz/address/0xd2550fCb1C389401E9F8802e68b093fcc0595993#contract).
+- **Testnet**: Available on Lens Sepolia at [0xcA7090a104562915F8717bd692F8A2d6795f2A2E](https://explorer.testnet.lens.xyz/address/0xcA7090a104562915F8717bd692F8A2d6795f2A2E).
 
-- `AutomationCompatible` import
-- `AutomationCompatible` inheritance
-- `cannotExecute` modifier on `checkUpkeep()`
+### Creating a Competition
 
-Provide a `FOUNDRY_KEYSTORE_ACCOUNT` to deploy:
+- **Via Frontend**: Visit [contractlevel.com](http://contractlevel.com) to create a competition with a few clicks.
+- **Via CLI**: Use `cast` to interact with the contract directly. Example:
+  ```bash
+  cast send 0xd2550fCb1C389401E9F8802e68b093fcc0595993 "createCompetition(string,uint256,uint256)" "hackathon-theme" 1747064126 1747065326 --value 100000000000000 --rpc-url https://rpc.lens.dev --account myKeystore
+  ```
+
+### Participating
+
+- **Submit a Post**: Create a Lens post and submit its postId to an active competition before the submissionDeadline.
+
+- **Vote**: Cast your vote for a submitted post between the submissionDeadline and votingDeadline.
+
+- **Prize Distribution**: After the votingDeadline, anyone can trigger distributePrizePool to send the prize to the winner.
+
+### Testing and Verification
+
+#### Unit Tests
+
+- **Framework**: Foundry, forking Lens mainnet to replicate real-world conditions.
+
+- **Execution**: Run tests with:
 
 ```
-forge script script/deploy/DeployContentCompetition.s.sol --rpc-url https://rpc.testnet.lens.dev --broadcast --zksync --account <FOUNDRY_KEYSTORE_ACCOUNT>
+forge test --mt test_competitions --zksync
 ```
 
-### CCAutomation contract
+#### Formal Verification
 
-`CCAutomation` is intended to operate on ETH Sepolia, so it needs to be compiled with regular Foundry.
+- **Tool**: Certora, ensuring critical properties (e.g., prize distribution only happens once per competition).
 
-```
-foundryup
-```
-
-Ensure the code is restored if sections were previously commented out for Foundry-zksync compilation.
-
-Provide a `FOUNDRY_KEYSTORE_ACCOUNT` and `ETH_RPC_URL` to deploy:
+- **Execution**: Run verification with:
 
 ```
-forge script script/deploy/DeployCCAutomation.s.sol --account <FOUNDRY_KEYSTORE_ACCOUNT> --rpc-url <ETH_RPC_URL> --broadcast
+export CERTORAKEY=<YOUR_KEY_HERE>
+certoraRun ./certora/conf/Competitions.conf
 ```
 
-## Frontend
+### Frontend
 
-The frontend is built with Next.js, to run it:
+To build the frontend run:
 
 ```
 cd frontend
@@ -74,25 +144,14 @@ npm i
 npm run dev
 ```
 
-## Testing and Verification
+### Future Enhancements
 
-For unit tests run:
+- **Sybil-Resistance**: Implement robust mechanisms to prevent vote manipulation and ensure fair participation.
 
-```
-forge test --mt test_competitions --zksync
-```
+- **Automation**: Integrate Chainlink Automation when available on Lens mainnet for fully automated prize distribution.
 
-Certora is used for formal verification. Export a CERTORAKEY to run the conf.
+### Links and Resources
 
-```
-export CERTORAKEY=<YOUR_KEY_HERE>
-certoraRun ./certora/conf/Competitions.conf
-```
+- **Mainnet Deployment**: 0xd2550fCb1C389401E9F8802e68b093fcc0595993
 
-## Interactions
-
-Create competitions with cast send. Example:
-
-```
-cast send 0x766EBAb532F518b55FaaD3425EBE0Dc26F55604c "createCompetition(string,uint256,uint256)" "hackathon-theme" 1747064126 1747065326 --value 100000000000000 --rpc-url https://rpc.testnet.lens.dev --account myKeystore
-```
+- **Testnet Deployment**: 0xcA7090a104562915F8717bd692F8A2d6795f2A2E

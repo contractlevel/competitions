@@ -15,6 +15,14 @@ contract DistributePrizePoolTest is BaseTest {
         comp.distributePrizePool(competitionId);
     }
 
+    function test_competitions_distributePrizePool_revertsWhen_prizeAlreadyDistributed() public {
+        uint256 competitionId = _createCompetition();
+        vm.warp(comp.getVotingDeadline(competitionId) + 1);
+        comp.distributePrizePool(competitionId);
+        vm.expectRevert(abi.encodeWithSignature("Competitions__PrizeAlreadyDistributed()"));
+        comp.distributePrizePool(competitionId);
+    }
+
     function test_competitions_distributePrizePool_sendToCreatorWhen_noSubmissions() public {
         uint256 competitionId = _createCompetition();
         vm.warp(comp.getVotingDeadline(competitionId) + 1);

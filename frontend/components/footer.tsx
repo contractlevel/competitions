@@ -1,5 +1,5 @@
-import Link from "next/link"
-import { Github } from "lucide-react"
+import Link from 'next/link';
+import { Github } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -7,13 +7,14 @@ export default function Footer() {
       <div className="container mx-auto py-6 px-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm text-muted-foreground">
-            <span className="text-neon-pink">Contract</span> <span className="text-neon-green">Level</span> ©{" "}
+            <span className="text-neon-pink">Contract</span>{' '}
+            <span className="text-neon-green">Level</span> ©{' '}
             {new Date().getFullYear()}
           </div>
 
           <div className="flex items-center gap-6">
             <Link
-              href="https://github.com/your-username/contract-level"
+              href="https://github.com/contractlevel/competitions"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-muted-foreground hover:text-neon-blue transition-colors"
@@ -25,5 +26,5 @@ export default function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

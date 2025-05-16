@@ -25,7 +25,7 @@ const config = createConfig(
     appName: 'Contract Level',
 
     // Optional App Info
-    appDescription: 'A platform for content creation and voting',
+    appDescription: 'A platform for decentralized competitions',
     appUrl: 'https://contractlevel.com', // your app's url
     appIcon: 'https://contractlevel.com/logo.png', // your app's icon
   })
