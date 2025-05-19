@@ -73,12 +73,12 @@ Contract Level Competitions is a decentralized platform built on the Lens Chain,
 
 - **Core Contract**: The `Competitions` contract handles all competition logic, including creation, submissions, voting, and prize distribution.
 - **Lens Integration**: Interacts with the Lens V3 global feed contract to validate and retrieve post data.
-- **Mainnet Deployment**: Live on Lens mainnet at [0xd2550fCb1C389401E9F8802e68b093fcc0595993](https://explorer.lens.xyz/address/0xd2550fCb1C389401E9F8802e68b093fcc0595993#contract).
+- **Mainnet Deployment**: Live on Lens mainnet at [0xd2550fCb1C389401E9F8802e68b093fcc0595993](https://explorer.lens.xyz/address/0xd2550fCb1C389401E9F8802e68b093fcc0595993).
 
 ### Cross-Chain Adaptation
 
 - **Original Vision**: Planned to use Chainlink Automation for automated prize distribution, tested on Lens testnet with CCIP.
-- **Mainnet Adjustment**: Due to Chainlink Automation's unavailability on Lens mainnet, prize distribution is currently manual (callable by anyone post-voting). Automation will be reintroduced when supported.
+- **Mainnet Adjustment**: Due to CCIP's unavailability on Lens mainnet, prize distribution is currently manual (callable by anyone post-voting). Automation will be reintroduced when supported.
 
 ### Frontend
 
@@ -95,7 +95,7 @@ The `Competitions` contract can be deployed by running the following script:
 forge script script/deploy/DeployCompetitions.s.sol --broadcast --zksync --rpc-url <RPC_URL_HERE> --account <KEYSTORE_ACCOUNT_HERE>
 ```
 
-- **Mainnet**: Deployed on Lens Chain at [0xd2550fCb1C389401E9F8802e68b093fcc0595993](https://explorer.lens.xyz/address/0xd2550fCb1C389401E9F8802e68b093fcc0595993#contract).
+- **Mainnet**: Deployed on Lens Chain at [0xd2550fCb1C389401E9F8802e68b093fcc0595993](https://explorer.lens.xyz/address/0xd2550fCb1C389401E9F8802e68b093fcc0595993).
 - **Testnet**: Available on Lens Sepolia at [0xcA7090a104562915F8717bd692F8A2d6795f2A2E](https://explorer.testnet.lens.xyz/address/0xcA7090a104562915F8717bd692F8A2d6795f2A2E).
 
 ### Creating a Competition
