@@ -58,13 +58,6 @@ definition NotCreated(uint256 compId) returns bool =
         getSubmissionDeadline(compId) == 0 &&
         getVotingDeadline(compId) == 0;
 
-// /// @notice functions that cant be called when the competition is not created
-// definition RequiresExistingCompetition(method f) returns bool =
-//     f.selector == sig:vote(uint256,uint256).selector ||
-//     f.selector == sig:distributePrizePool(uint256).selector ||
-//     f.selector == sig:withdrawProtocolFees().selector ||
-//     f.selector == sig:getCompetition(uint256).selector;
-
 definition SubmissionPeriod(env e, uint256 compId) returns bool =
     compId < getCompetitionCount() &&
     getSubmissionDeadline(compId) > e.block.timestamp;
@@ -138,48 +131,6 @@ invariant prizePool_no_zeroValue(uint256 compId)
 // invariant feesAccountancy()
 //     nativeBalances[currentContract.owner()] >= 
 //         (g_totalProtocolFeesAccumulated - g_totalProtocolFeesWithdrawn) + getProtocolFees();
-
-// valid states:
-// 1. notCreated
-/// createCompetition()
-// 2. submissionPeriod
-/// submitPost()
-// 3. votingPeriod
-/// vote()
-// 4. afterVotingPeriod
-/// distributePrizePool()
-// 5. prizeDistributed
-
-// invariant notCreated(env e, uint256 compId)
-//     NotCreated(compId) && 
-//         !SubmissionPeriod(e, compId) && !VotingPeriod(e, compId) &&
-//         !AfterVotingPeriod(e, compId) && !PrizeDistributed(compId);
-
-// invariant submissionPeriod(env e, uint256 compId)
-//     SubmissionPeriod(e, compId) =>
-//         !NotCreated(compId) && !VotingPeriod(e, compId) &&
-//         !AfterVotingPeriod(e, compId) && !PrizeDistributed(compId);
-
-// invariant votingPeriod(env e, uint256 compId)
-//     VotingPeriod(e, compId) =>
-//         !NotCreated(compId) && !SubmissionPeriod(e, compId) &&
-//         !AfterVotingPeriod(e, compId) && !PrizeDistributed(compId);
-
-// invariant afterVotingPeriod(env e, uint256 compId)
-//     AfterVotingPeriod(e, compId) =>
-//         !NotCreated(compId) && !SubmissionPeriod(e, compId) &&
-//         !VotingPeriod(e, compId);
-
-// invariant prizeDistributed(env e, uint256 compId)
-//     PrizeDistributed(compId) => AfterVotingPeriod(e, compId) {
-//         preserved {
-//             requireInvariant afterVotingPeriod(e, compId);
-//         }
-//     }
-
-
-
-
 
 /*//////////////////////////////////////////////////////////////
                              RULES
