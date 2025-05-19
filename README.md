@@ -12,7 +12,7 @@ Contract Level Competitions is a decentralized platform built on the Lens Chain,
 
 ### Key Highlights
 
-- **Built on Lens Chain**: Fully deployed on Lens mainnet, meeting the hackathon's core requirement.
+- **Built on Lens Chain**: Fully deployed on Lens mainnet.
 - **Lens Social Integration**: Utilizes Lens posts as submissions, tapping into the power of the Lens Social Primitive.
 - **Seamless Onboarding**: Implements ConnectKit + Continue with Family for a smooth, user-friendly wallet connection experience.
 
