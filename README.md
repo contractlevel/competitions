@@ -162,3 +162,5 @@ npm run dev
 ## Additional Comments
 
 Deployed contracts were unable to be verified on the lens explorer because only <= 0.8.24 was compatible, and the Lens Feed contract is 0.8.26.
+
+CCIP was upgraded at the end of the Lens hackathon, and Lens mainnet can now securely connect to Ethereum mainnet. The timing of this upgrade is unfortunate as there is not enough time to refactor the project back to the original vision and deploy, but exciting to know that reliably Automation can now be implemented in Lens mainnet smart contracts.
